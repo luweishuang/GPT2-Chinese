@@ -1,3 +1,4 @@
+tensorboard_summary/
 __pycache__/
 .DS_Store
 cache/.DS_Store

@@ -24,12 +24,14 @@ def build_files(data_path, tokenized_data_path, num_pieces, full_tokenizer, min_
             lines.append(cur_line.strip().replace('\n', ' [SEP] '))
     all_len = len(lines)
     print("训练语料的总量 = %d " % len(lines))
+    lines_cut = [line for line in lines if len(line) > min_length]  # 只考虑长度超过min_length的句子
+    print("裁减后训练语料的总量 = %d " % len(lines_cut))
     if not os.path.exists(tokenized_data_path):
         os.mkdir(tokenized_data_path)
     for i in tqdm(range(num_pieces)):
-        sublines = lines[all_len // num_pieces * i: all_len // num_pieces * (i + 1)]    # 取整除 - 返回商的整数部分（向下取整）
+        sublines = lines_cut[all_len // num_pieces * i: all_len // num_pieces * (i + 1)]    # 取整除 - 返回商的整数部分（向下取整）
         if i == num_pieces - 1:
-            sublines.extend(lines[all_len // num_pieces * (i + 1):])  # 把尾部例子添加到最后一个piece
+            sublines.extend(lines_cut[all_len // num_pieces * (i + 1):])  # 把尾部例子添加到最后一个piece
         sublines = [full_tokenizer.tokenize(line) for line in sublines if
                     len(line) > min_length]  # 只考虑长度超过min_length的句子
         sublines = [full_tokenizer.convert_tokens_to_ids(line) for line in sublines]
@@ -46,14 +48,14 @@ def build_files(data_path, tokenized_data_path, num_pieces, full_tokenizer, min_
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='0,1,2,3', type=str, required=False, help='设置使用哪些显卡')
+    parser.add_argument('--device', default='0,1', type=str, required=False, help='设置使用哪些显卡')
     parser.add_argument('--model_config', default='config/model_config.json', type=str, required=False,
                         help='选择模型参数')
     parser.add_argument('--tokenizer_path', default='cache/vocab.txt', type=str, required=False, help='选择词库')
     parser.add_argument('--raw_data_path', default='data/train.txt', type=str, required=False, help='原始训练语料')
     parser.add_argument('--tokenized_data_path', default='data/tokenized/', type=str, required=False,
                         help='tokenized语料存放位置')
-    parser.add_argument('--raw', action='store_true', help='是否先做tokenize')
+    parser.add_argument('--raw', default=True, action='store_true', help='是否先做tokenize')
     parser.add_argument('--epochs', default=5, type=int, required=False, help='训练循环')
     parser.add_argument('--batch_size', default=8, type=int, required=False, help='训练batch size')
     parser.add_argument('--lr', default=1.5e-4, type=float, required=False, help='学习率')
@@ -64,7 +66,7 @@ def main():
     parser.add_argument('--fp16', action='store_true', help='混合精度')
     parser.add_argument('--fp16_opt_level', default='O1', type=str, required=False)
     parser.add_argument('--max_grad_norm', default=1.0, type=float, required=False)
-    parser.add_argument('--num_pieces', default=100, type=int, required=False, help='将训练语料分成多少份')
+    parser.add_argument('--num_pieces', default=20, type=int, required=False, help='将训练语料分成多少份')
     parser.add_argument('--min_length', default=128, type=int, required=False, help='最短收录文章长度')
     parser.add_argument('--output_dir', default='model/', type=str, required=False, help='模型输出路径')
     parser.add_argument('--pretrained_model', default='', type=str, required=False, help='模型训练起点路径')
