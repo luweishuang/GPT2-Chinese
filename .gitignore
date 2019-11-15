@@ -1,3 +1,5 @@
+model/
+nohup.out
 tensorboard_summary/
 __pycache__/
 .DS_Store
